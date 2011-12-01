@@ -158,6 +158,29 @@ bool ProfilerCommunication::TrackAssembly(WCHAR* pModulePath, WCHAR* pAssemblyNa
     return response;
 }
 
+bool ProfilerCommunication::TrackFunctionElt(WCHAR* pModulePath, WCHAR* pAssemblyName, FunctionID functionId)
+{
+    CScopedLock<CMutex> lock(m_mutexCommunication);
+
+    bool response = false;
+    RequestInformation(
+        [=]()
+        {
+			m_pMSG->trackFunctionEltRequest.type = MSG_TrackFunctionElt; 
+			m_pMSG->trackFunctionEltRequest.functionToken = functionId;
+			wcscpy_s(m_pMSG->trackFunctionEltRequest.szModulePath, pModulePath);
+            wcscpy_s(m_pMSG->trackFunctionEltRequest.szAssemblyName, pAssemblyName);
+        }, 
+        [=, &response]()->BOOL
+        {
+			response =  m_pMSG->trackFunctionEltResponse.bResponse;
+            return FALSE;
+        }
+    );
+
+    return response;
+}
+
 template<class BR, class PR>
 void ProfilerCommunication::RequestInformation(BR buildRequest, PR processResults)
 {

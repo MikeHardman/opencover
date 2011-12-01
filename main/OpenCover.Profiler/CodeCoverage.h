@@ -108,6 +108,14 @@ public:
         /* [in] */ FunctionID functionId,
         /* [in] */ BOOL fIsSafeToBlock);
 
+	// Callback where the profiler requests function ID mapping (not used here) and whether to attach ELT hooks for a 
+	// function. We ask the host whether to add ELT hooks.
+	UINT_PTR CCodeCoverage::FunctionIDMapper(FunctionID funcId, BOOL *pbHookFunction);
+
+	// Callbacks for ELT hooks. Adds an ELT message to the host stream.
+	void STDMETHODCALLTYPE FunctionEnter(FunctionID id, UINT_PTR clientData, COR_PRF_FRAME_INFO frame, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo);
+	void STDMETHODCALLTYPE FunctionLeave(FunctionID id, UINT_PTR clientData, COR_PRF_FRAME_INFO frame, COR_PRF_FUNCTION_ARGUMENT_RANGE* retvalRange);
+	void STDMETHODCALLTYPE FunctionTailCall(FunctionID id, UINT_PTR clientData, COR_PRF_FRAME_INFO frame);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(CodeCoverage), CCodeCoverage)

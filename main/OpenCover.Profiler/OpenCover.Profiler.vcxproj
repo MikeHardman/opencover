@@ -249,6 +249,7 @@
     </ClCompile>
     <ClCompile Include="Instruction.cpp" />
     <ClCompile Include="Method.cpp" />
+    <ClCompile Include="NativeCallback.cpp" />
     <ClCompile Include="OpenCover.Profiler.cpp" />
     <ClCompile Include="OpenCoverProfiler_i.c">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
@@ -297,6 +298,7 @@
     <ClInclude Include="Messages.h" />
     <ClInclude Include="Method.h" />
     <ClInclude Include="MethodBuffer.h" />
+    <ClInclude Include="nativecallback.h" />
     <ClInclude Include="OpenCoverProfiler_i.h" />
     <ClInclude Include="ProfileBase.h" />
     <ClInclude Include="ProfilerCommunication.h" />

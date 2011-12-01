@@ -32,12 +32,20 @@ typedef struct VisitPoint
 
 #pragma pack(pop)
 
+enum MSG_StreamToken : ULONG
+{
+    MSG_TokenFunctionEnter    = ULONG_MAX,
+    MSG_TokenFunctionLeave    = ULONG_MAX - 1,
+    MSG_TokenFunctionTailCall = ULONG_MAX - 2,
+};
+
 enum MSG_Type : int
 {
     MSG_Unknown = 0,
     MSG_TrackAssembly = 1,
     MSG_GetSequencePoints = 2,
     MSG_GetBranchPoints = 3,
+    MSG_TrackFunctionElt = 4,
 };
 
 #pragma pack(push)
@@ -54,6 +62,19 @@ typedef struct _MSG_TrackAssembly_Response
 {
     BOOL bResponse;
 } MSG_TrackAssembly_Response;
+
+typedef struct _MSG_TrackFunctionElt_Request
+{
+    MSG_Type type;
+    int functionToken;
+    WCHAR szModulePath[512];
+    WCHAR szAssemblyName[512];
+} MSG_TrackFunctionElt_Request;
+
+typedef struct _MSG_TrackFunctionElt_Response
+{
+    BOOL bResponse;
+} MSG_TrackFunctionElt_Response;
 
 typedef struct _MSG_GetSequencePoints_Request
 {
@@ -98,6 +119,8 @@ typedef union _MSG_Union
     MSG_Type type;
     MSG_TrackAssembly_Request trackRequest;
     MSG_TrackAssembly_Response trackResponse;
+    MSG_TrackFunctionElt_Request trackFunctionEltRequest;
+    MSG_TrackFunctionElt_Response trackFunctionEltResponse;
     MSG_GetSequencePoints_Request getSequencePointsRequest;
     MSG_GetSequencePoints_Response getSequencePointsResponse;
     MSG_GetBranchPoints_Request getBranchPointsRequest;

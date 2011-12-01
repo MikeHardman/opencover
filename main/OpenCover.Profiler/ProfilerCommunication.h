@@ -26,13 +26,16 @@ public:
 
 public:
     bool TrackAssembly(WCHAR* pModulePath, WCHAR* pAssemblyName);
+	bool TrackFunctionElt(WCHAR* pModulePath, WCHAR* pAssemblyName, FunctionID functionId);
     bool GetPoints(mdToken functionToken, WCHAR* pModulePath, WCHAR* pAssemblyName, std::vector<SequencePoint> &seqPoints, std::vector<BranchPoint> &brPoints);
     inline void AddVisitPoint(ULONG uniqueId) { if (uniqueId!=0) m_queue.push(uniqueId); }
+    inline void AddEltMessage(ULONG messageMarker, int functionID) { m_queue.push(messageMarker); m_queue.push(functionID); }
 
 private:
     void SendVisitPoints();
     bool GetSequencePoints(mdToken functionToken, WCHAR* pModulePath, WCHAR* pAssemblyName, std::vector<SequencePoint> &points);
     bool GetBranchPoints(mdToken functionToken, WCHAR* pModulePath, WCHAR* pAssemblyName, std::vector<BranchPoint> &points);
+	void SendFunctionElt(ULONG eltTypeMarker, ULONG functionId);
 
 private:
     tstring m_key;

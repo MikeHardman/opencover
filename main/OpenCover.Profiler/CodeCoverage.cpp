@@ -11,6 +11,46 @@
 #include "CoverageInstrumentation.h"
 #include "dllmain.h"
 
+//
+// Global hooks to profiler callbacks
+//
+
+// http://msdn.microsoft.com/en-us/library/aa964981.aspx
+void __stdcall FunctionEnter2Global(
+    /*[in]*/FunctionID                          funcID, 
+    /*[in]*/UINT_PTR                            clientData, 
+    /*[in]*/COR_PRF_FRAME_INFO                  func, 
+    /*[in]*/COR_PRF_FUNCTION_ARGUMENT_INFO      *argumentInfo)
+{
+	CCodeCoverage::g_pProfiler->FunctionEnter(funcID, clientData, func, argumentInfo);
+}
+
+// http://msdn.microsoft.com/en-us/library/aa964942.aspx
+void __stdcall FunctionLeave2Global(
+    /*[in]*/FunctionID                          funcID, 
+    /*[in]*/UINT_PTR                            clientData, 
+    /*[in]*/COR_PRF_FRAME_INFO                  func, 
+    /*[in]*/COR_PRF_FUNCTION_ARGUMENT_RANGE     *retvalRange)
+{
+	CCodeCoverage::g_pProfiler->FunctionLeave(funcID, clientData, func, retvalRange);
+}
+
+// http://msdn.microsoft.com/en-us/library/aa964754.aspx
+void __stdcall FunctionTailcall2Global(
+    /*[in]*/FunctionID                          funcID, 
+    /*[in]*/UINT_PTR                            clientData, 
+    /*[in]*/COR_PRF_FRAME_INFO                  func)
+{
+	CCodeCoverage::g_pProfiler->FunctionTailCall(funcID, clientData, func);
+}
+
+// http://msdn.microsoft.com/en-us/library/aa964957.aspx
+UINT_PTR __stdcall FunctionIDMapperGlobal(FunctionID funcID, BOOL *pbHookFunction)
+{
+	return CCodeCoverage::g_pProfiler->FunctionIDMapper(funcID, pbHookFunction);
+}
+
+
 CCodeCoverage* CCodeCoverage::g_pProfiler = NULL;
 // CCodeCoverage
 
@@ -55,7 +95,8 @@ HRESULT STDMETHODCALLTYPE CCodeCoverage::Initialize(
     dwMask |= COR_PRF_MONITOR_JIT_COMPILATION;	    // Controls the JITCompilation, JITFunctionPitched, and JITInlining callbacks.
     dwMask |= COR_PRF_DISABLE_INLINING;				// Disables all inlining.
     dwMask |= COR_PRF_DISABLE_OPTIMIZATIONS;		// Disables all code optimizations.
-    if (m_isV4) dwMask |= COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST; 
+	dwMask |= COR_PRF_MONITOR_ENTERLEAVE;           // Profile function enter/leave/tailcall
+	if (m_isV4) dwMask |= COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST; 
 
     m_profilerInfo2->SetEventMask(dwMask);
 
@@ -166,4 +207,39 @@ HRESULT STDMETHODCALLTYPE CCodeCoverage::JITCompilationStarted(
     
     return S_OK; 
 }
-        
+
+// Callback where the profiler requests function ID mapping (not used here) and whether to attach ELT hooks for a 
+// function. We ask the host whether to add ELT hooks.
+UINT_PTR CCodeCoverage::FunctionIDMapper(
+                FunctionID functionId,
+                BOOL *pbHookFunction)
+{
+    std::wstring moduleName;
+    mdToken functionToken;
+    ModuleID moduleId;
+
+    if (GetTokenAndModule(functionId, functionToken, moduleId, moduleName))
+    {
+		*pbHookFunction = m_host.TrackFunctionElt(
+			(LPWSTR)moduleName.c_str(), (LPWSTR)m_allowModulesAssemblyMap[moduleName].c_str(), functionToken);
+	}
+	return functionId;
+}
+
+// Callback for function enter ELT hook. Adds an ELT message to the host stream.
+void STDMETHODCALLTYPE CCodeCoverage::FunctionEnter(FunctionID id, UINT_PTR clientData, COR_PRF_FRAME_INFO frame, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo)
+{
+	m_host.AddEltMessage(MSG_TokenFunctionEnter, id);
+}
+
+// Callback for function leave ELT hook. Adds an ELT message to the host stream.
+void STDMETHODCALLTYPE CCodeCoverage::FunctionLeave(FunctionID id, UINT_PTR clientData, COR_PRF_FRAME_INFO frame, COR_PRF_FUNCTION_ARGUMENT_RANGE* retvalRange)
+{
+	m_host.AddEltMessage(MSG_TokenFunctionLeave, id);
+}
+
+// Callback for function tail call ELT hook. Adds an ELT message to the host stream.
+void STDMETHODCALLTYPE CCodeCoverage::FunctionTailCall(FunctionID id, UINT_PTR clientData, COR_PRF_FRAME_INFO frame)
+{
+	m_host.AddEltMessage(MSG_TokenFunctionTailCall, id);
+}

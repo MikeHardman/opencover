@@ -6,6 +6,7 @@
 /main/**/Debug
 /main/**/Release
 /main/**/*.user
+/main/**/*.vspscc
 /main/OpenCover.opensdf
 /main/OpenCover.sdf
 /main/OpenCover.suo
